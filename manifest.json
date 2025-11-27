@@ -1,31 +1,31 @@
 {
-  "version": "2025.11.27.1457",
-  "created_at": "2025-11-27T14:57:18.142960Z",
+  "version": "2025.11.27.1543",
+  "created_at": "2025-11-27T15:43:17.500061Z",
   "brewx_min_version": "0.1.0",
   "indexes": {
     "formulas": {
-      "count": 18,
-      "db_sha256": "e7051f917caf513d72a3f7d9f7d27ea9af860b7b5726ad01ead4181bbd1e789e",
-      "db_size": 2851497,
-      "updated_at": "2025-11-27T14:57:05.912114Z"
+      "count": 8059,
+      "db_sha256": "1aa712174d20a6bc206a665b48231e54481c260f27b6c3a850c40b13f6533317",
+      "db_size": 2850881,
+      "updated_at": "2025-11-27T15:43:06.689768Z"
     },
     "casks": {
-      "count": 0,
-      "db_sha256": "2f48f2c3fb08e61bdbd687bcc769e8a3b10570da46991300f51a2860d4fc7dbf",
-      "db_size": 1940649,
-      "updated_at": "2025-11-27T14:57:11.362119Z"
+      "count": 7685,
+      "db_sha256": "7d6512357fb5ec0e8bd1b7066f6f9d794a34eea9f5e182378f0540cc1ea4fde0",
+      "db_size": 1940501,
+      "updated_at": "2025-11-27T15:43:11.355792Z"
     },
     "linux_apps": {
-      "count": 0,
-      "db_sha256": "",
-      "db_size": 0,
-      "updated_at": "1970-01-01T00:00:00Z"
+      "count": 1063,
+      "db_sha256": "389989fdeaa78ee2a492004de1ff01117b725e594be457c516e4e0dbd9108d8d",
+      "db_size": 205139,
+      "updated_at": "2025-11-27T15:43:12.286797Z"
     },
     "vulnerabilities": {
-      "count": 0,
-      "db_sha256": "",
-      "db_size": 0,
-      "updated_at": "1970-01-01T00:00:00Z"
+      "count": 18,
+      "db_sha256": "ba60c1f9d83c90e105a36d12774840d0224251ffa361978667d9635dac06910d",
+      "db_size": 51556,
+      "updated_at": "2025-11-27T15:43:17.421730Z"
     }
   }
 }
