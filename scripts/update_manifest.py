@@ -51,7 +51,14 @@ def get_index_info(base_dir: Path, index_name: str, db_name: str = "index.db.zst
         try:
             with open(local_manifest) as f:
                 data = json.load(f)
-                count = data.get("formula_count", data.get("count", 0))
+                # Try different count field names
+                count = (
+                    data.get("formula_count") or
+                    data.get("cask_count") or
+                    data.get("vulnerability_count") or
+                    data.get("count") or
+                    0
+                )
         except (json.JSONDecodeError, KeyError):
             pass
 

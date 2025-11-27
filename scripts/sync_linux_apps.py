@@ -290,7 +290,7 @@ def write_compressed_json(apps: list[LinuxApp], output_dir: Path) -> None:
     """Write individual compressed JSON files for each app."""
     import zstandard as zstd
 
-    apps_dir = output_dir / "linux_apps"
+    apps_dir = output_dir / "linux-apps" / "data"
     apps_dir.mkdir(parents=True, exist_ok=True)
 
     compressor = zstd.ZstdCompressor(level=19)
@@ -326,9 +326,12 @@ def write_compressed_json(apps: list[LinuxApp], output_dir: Path) -> None:
     logger.info(f"Wrote {len(apps)} compressed JSON files")
 
 def main():
+    import zstandard as zstd
+    from datetime import datetime
+
     parser = argparse.ArgumentParser(description="Sync Linux apps metadata")
-    parser.add_argument('--output', '-o', default='index/linux',
-                       help='Output directory (default: index/linux)')
+    parser.add_argument('--output', '-o', default='.',
+                       help='Output directory (default: current directory)')
     parser.add_argument('--sources', '-s', nargs='+',
                        default=['appimage', 'flatpak'],
                        choices=['appimage', 'flatpak', 'snap'],
@@ -344,6 +347,12 @@ def main():
 
     output_dir = Path(args.output)
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Create linux-apps directory structure
+    linux_apps_dir = output_dir / "linux-apps"
+    linux_apps_dir.mkdir(exist_ok=True)
+    linux_apps_data_dir = linux_apps_dir / "data"
+    linux_apps_data_dir.mkdir(exist_ok=True)
 
     all_apps = []
 
@@ -374,9 +383,24 @@ def main():
     unique_apps = list(seen_tokens.values())
     logger.info(f"Total unique apps: {len(unique_apps)}")
 
-    # Create database
-    db_path = output_dir / "linux_apps.db"
+    # Create database in linux-apps/
+    db_path = linux_apps_dir / "index.db"
     create_database(unique_apps, db_path)
+
+    # Compress database
+    logger.info("Compressing database...")
+    db_bytes = db_path.read_bytes()
+    compressor = zstd.ZstdCompressor(level=19)
+    compressed_db = compressor.compress(db_bytes)
+
+    compressed_path = linux_apps_dir / "index.db.zst"
+    compressed_path.write_bytes(compressed_db)
+
+    # Remove uncompressed database
+    db_path.unlink()
+
+    db_hash = hashlib.sha256(compressed_db).hexdigest()
+    logger.info(f"Database compressed: {len(db_bytes)} -> {len(compressed_db)} bytes")
 
     # Write compressed JSON files
     if not args.no_compress:
@@ -384,6 +408,16 @@ def main():
             write_compressed_json(unique_apps, output_dir)
         except ImportError:
             logger.warning("zstandard not available, skipping compressed JSON output")
+
+    # Create local manifest
+    manifest = {
+        "count": len(unique_apps),
+        "index_sha256": db_hash,
+        "index_size": len(compressed_db),
+        "created_at": datetime.utcnow().isoformat() + "Z",
+    }
+    manifest_path = linux_apps_dir / "manifest.json"
+    manifest_path.write_text(json.dumps(manifest, indent=2))
 
     logger.info("Linux apps sync complete!")
 
@@ -396,7 +430,7 @@ def main():
     print(f"  Total apps: {len(unique_apps)}")
     for source, count in sorted(by_source.items()):
         print(f"  {source}: {count}")
-    print(f"  Database: {db_path}")
+    print(f"  Database: {compressed_path}")
 
 if __name__ == '__main__':
     main()
