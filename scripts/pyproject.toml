@@ -1,0 +1,21 @@
+[project]
+name = "brewx-index-sync"
+version = "0.1.0"
+description = "Sync scripts for brewx package index"
+requires-python = ">=3.11"
+dependencies = [
+    "requests>=2.31.0",
+    "zstandard>=0.22.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.1.0",
+    "mypy>=1.8.0",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "ruff>=0.1.0",
+    "mypy>=1.8.0",
+]

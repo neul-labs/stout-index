@@ -1,0 +1,128 @@
+name: Sync Index
+
+on:
+  schedule:
+    # Run every 4 hours
+    - cron: '0 */4 * * *'
+  push:
+    branches:
+      - main
+    paths:
+      - 'scripts/**'
+      - '.github/workflows/sync.yml'
+  workflow_dispatch:
+    inputs:
+      indexes:
+        description: 'Indexes to sync (all, formulas, casks, linux-apps, vulns)'
+        required: false
+        default: 'all'
+      force:
+        description: 'Force full rebuild'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Install dependencies
+        run: |
+          cd scripts
+          uv sync
+
+      - name: Install zstd
+        run: sudo apt-get install -y zstd
+
+      - name: Sync Formulas
+        if: ${{ github.event.inputs.indexes == 'all' || github.event.inputs.indexes == 'formulas' || github.event_name != 'workflow_dispatch' }}
+        run: |
+          cd scripts
+          uv run python sync.py --output ../ ${{ github.event.inputs.force == 'true' && '--force' || '' }}
+
+      - name: Sync Casks
+        if: ${{ github.event.inputs.indexes == 'all' || github.event.inputs.indexes == 'casks' || github.event_name != 'workflow_dispatch' }}
+        run: |
+          cd scripts
+          uv run python sync_casks.py --output ../ ${{ github.event.inputs.force == 'true' && '--force' || '' }}
+
+      - name: Sync Linux Apps
+        if: ${{ github.event.inputs.indexes == 'all' || github.event.inputs.indexes == 'linux-apps' || github.event_name != 'workflow_dispatch' }}
+        run: |
+          cd scripts
+          uv run python sync_linux_apps.py --output ../ ${{ github.event.inputs.force == 'true' && '--force' || '' }}
+
+      - name: Sync Vulnerabilities
+        if: ${{ github.event.inputs.indexes == 'all' || github.event.inputs.indexes == 'vulns' || github.event_name != 'workflow_dispatch' }}
+        run: |
+          cd scripts
+          uv run python sync_vulns.py --output ../ ${{ github.event.inputs.force == 'true' && '--force' || '' }}
+
+      - name: Update Manifest
+        run: |
+          cd scripts
+          uv run python update_manifest.py --output ../
+
+      - name: Commit and Push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Add all changes
+          git add -A
+
+          # Check if there are changes
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+
+          # Get counts for commit message
+          FORMULA_COUNT=$(cat manifest.json | jq -r '.indexes.formulas.count // 0')
+          CASK_COUNT=$(cat manifest.json | jq -r '.indexes.casks.count // 0')
+
+          # Commit with descriptive message
+          git commit -m "Update index: ${FORMULA_COUNT} formulas, ${CASK_COUNT} casks
+
+          Automated sync at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+          # Push changes
+          git push
+
+      - name: Summary
+        run: |
+          echo "## Sync Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Index | Count | Size |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|------|" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f manifest.json ]; then
+            FORMULAS=$(cat manifest.json | jq -r '.indexes.formulas.count // "N/A"')
+            CASKS=$(cat manifest.json | jq -r '.indexes.casks.count // "N/A"')
+            LINUX=$(cat manifest.json | jq -r '.indexes.linux_apps.count // "N/A"')
+            VULNS=$(cat manifest.json | jq -r '.indexes.vulnerabilities.count // "N/A"')
+
+            echo "| Formulas | $FORMULAS | $(du -h formulas/index.db.zst 2>/dev/null | cut -f1 || echo 'N/A') |" >> $GITHUB_STEP_SUMMARY
+            echo "| Casks | $CASKS | $(du -h casks/index.db.zst 2>/dev/null | cut -f1 || echo 'N/A') |" >> $GITHUB_STEP_SUMMARY
+            echo "| Linux Apps | $LINUX | $(du -h linux-apps/index.db.zst 2>/dev/null | cut -f1 || echo 'N/A') |" >> $GITHUB_STEP_SUMMARY
+            echo "| Vulnerabilities | $VULNS | $(du -h vulnerabilities/index.db.zst 2>/dev/null | cut -f1 || echo 'N/A') |" >> $GITHUB_STEP_SUMMARY
+          fi
