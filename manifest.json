@@ -1,19 +1,19 @@
 {
-  "version": "0.0.0",
-  "created_at": "1970-01-01T00:00:00Z",
+  "version": "2025.11.27.1457",
+  "created_at": "2025-11-27T14:57:18.142960Z",
   "brewx_min_version": "0.1.0",
   "indexes": {
     "formulas": {
-      "count": 0,
-      "db_sha256": "",
-      "db_size": 0,
-      "updated_at": "1970-01-01T00:00:00Z"
+      "count": 18,
+      "db_sha256": "e7051f917caf513d72a3f7d9f7d27ea9af860b7b5726ad01ead4181bbd1e789e",
+      "db_size": 2851497,
+      "updated_at": "2025-11-27T14:57:05.912114Z"
     },
     "casks": {
       "count": 0,
-      "db_sha256": "",
-      "db_size": 0,
-      "updated_at": "1970-01-01T00:00:00Z"
+      "db_sha256": "2f48f2c3fb08e61bdbd687bcc769e8a3b10570da46991300f51a2860d4fc7dbf",
+      "db_size": 1940649,
+      "updated_at": "2025-11-27T14:57:11.362119Z"
     },
     "linux_apps": {
       "count": 0,
