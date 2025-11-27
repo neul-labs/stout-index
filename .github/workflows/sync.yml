@@ -82,6 +82,20 @@ jobs:
           cd scripts
           uv run python update_manifest.py --output ../
 
+      - name: Sign Indexes
+        env:
+          BREWX_SIGNING_KEY: ${{ secrets.BREWX_SIGNING_KEY }}
+        run: |
+          if [ -n "$BREWX_SIGNING_KEY" ]; then
+            echo "Signing indexes with Ed25519 key..."
+            cd scripts
+            uv run python sign_index.py sign --key '$BREWX_SIGNING_KEY' --index-dir ../
+            echo "✓ Indexes signed successfully"
+          else
+            echo "⚠️ BREWX_SIGNING_KEY secret not configured - indexes will be unsigned"
+            echo "   Add the private key to repository secrets to enable signing"
+          fi
+
       - name: Commit and Push
         run: |
           git config user.name "github-actions[bot]"
@@ -111,6 +125,18 @@ jobs:
       - name: Summary
         run: |
           echo "## Sync Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Check signature status
+          if [ -f formulas/manifest.json ]; then
+            SIGNED=$(cat formulas/manifest.json | jq -r '.signature // empty')
+            if [ -n "$SIGNED" ]; then
+              echo "🔐 **Indexes are cryptographically signed**" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "⚠️ **Indexes are NOT signed** (configure BREWX_SIGNING_KEY secret)" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Index | Count | Size |" >> $GITHUB_STEP_SUMMARY
           echo "|-------|-------|------|" >> $GITHUB_STEP_SUMMARY
