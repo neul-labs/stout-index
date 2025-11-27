@@ -118,7 +118,6 @@ def fetch_flatpaks() -> list[LinuxApp]:
     """Fetch Flatpak catalog from Flathub."""
     logger.info("Fetching Flathub catalog...")
 
-    # Flathub has multiple categories
     apps = []
     seen_ids = set()
 
@@ -129,29 +128,42 @@ def fetch_flatpaks() -> list[LinuxApp]:
             logger.warning("No Flathub data available")
             return []
 
-        for app_id, app_data in data.items():
-            if app_id in seen_ids:
-                continue
-            seen_ids.add(app_id)
+        # Handle both list and dict formats from the API
+        items = []
+        if isinstance(data, list):
+            items = data
+        elif isinstance(data, dict):
+            items = list(data.values()) if data else []
 
+        for app_data in items:
             try:
+                # Get app_id from the data
+                app_id = app_data.get('id', app_data.get('flatpakAppId', ''))
+                if not app_id or app_id in seen_ids:
+                    continue
+                seen_ids.add(app_id)
+
                 name = app_data.get('name', app_id.split('.')[-1])
+
+                # Safely extract categories, filtering None values
+                categories = app_data.get('categories', []) or []
+                categories = [c for c in categories if c is not None]
 
                 app = LinuxApp(
                     token=tokenize(name),
                     name=name,
                     version=app_data.get('version', 'latest'),
                     desc=app_data.get('summary', ''),
-                    homepage=app_data.get('url', ''),
+                    homepage=app_data.get('url', app_data.get('homepage', '')),
                     source='flatpak',
                     flatpak_id=app_id,
                     icon_url=app_data.get('icon'),
-                    categories=app_data.get('categories', []),
+                    categories=categories,
                     license=app_data.get('license'),
                 )
                 apps.append(app)
             except Exception as e:
-                logger.debug(f"Failed to parse Flatpak entry {app_id}: {e}")
+                logger.debug(f"Failed to parse Flatpak entry: {e}")
                 continue
 
     except Exception as e:
@@ -229,7 +241,9 @@ def create_database(apps: list[LinuxApp], db_path: Path) -> None:
 
     # Insert apps
     for app in apps:
-        categories_str = ','.join(app.categories) if app.categories else ''
+        # Filter out None values from categories before joining
+        clean_categories = [c for c in (app.categories or []) if c is not None]
+        categories_str = ','.join(clean_categories)
 
         # Calculate JSON hash for delta updates
         app_json = json.dumps({
