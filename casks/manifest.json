@@ -1,8 +1,11 @@
 {
-  "version": "2025.11.27.2020",
-  "cask_index_version": "2025.11.27.2020",
-  "cask_index_sha256": "3045d0ea1d2cdc1fca164d360818ad05897514a6a2b9768ec03ef1d78f860fc2",
-  "cask_index_size": 1950271,
+  "version": "2025.11.27.2337",
+  "index_version": "2025.11.27.2337",
+  "index_sha256": "bbf761b4d584089ad82e5d930a9a14e3c6b2e3a6625ac9a3ca288030e99d640f",
+  "index_size": 1949976,
+  "signed_at": 1764286658,
+  "formula_count": 0,
   "cask_count": 7685,
-  "created_at": "2025-11-27T20:20:56.806345Z"
+  "signature": "0029bab90889f60d4d2a80dc8c67139ec300cf610d2458f2816d1486a969e64aa7bd3931fc1b1b9d879a177c5154ab24fea32c364eded605774a78fe70a6e206",
+  "created_at": "2025-11-27T23:37:33.992490Z"
 }

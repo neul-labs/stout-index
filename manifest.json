@@ -1,31 +1,39 @@
 {
-  "version": "2025.11.27.2021",
-  "created_at": "2025-11-27T20:21:02.280412Z",
+  "version": "2025.11.27.2337",
+  "created_at": "2025-11-27T23:37:38Z",
   "brewx_min_version": "0.1.0",
   "indexes": {
     "formulas": {
       "count": 8060,
-      "db_sha256": "3787841f6f6619421574f9ed899aa3efdf586adc27fcb81ff9810fbb496dd7c9",
-      "db_size": 2851367,
-      "updated_at": "2025-11-27T20:20:51.023042Z"
+      "db_sha256": "c75d07b22340d24d61f517701d2a57e5bf59af3545120a7430a3c157288e343c",
+      "db_size": 2851248,
+      "signature": "ffdbd9a2c055ebf676b6c7b9c66303969d4ded7386252a413877af9427e3d1b0969e0d2c04d344ead9767920860a03daa2a86432e71375983ae1442297776108",
+      "signed_at": 1764286658,
+      "updated_at": "2025-11-27T23:37:28.410529Z"
     },
     "casks": {
-      "count": 7685,
-      "db_sha256": "3045d0ea1d2cdc1fca164d360818ad05897514a6a2b9768ec03ef1d78f860fc2",
-      "db_size": 1950271,
-      "updated_at": "2025-11-27T20:20:56.801115Z"
+      "count": 0,
+      "db_sha256": "bbf761b4d584089ad82e5d930a9a14e3c6b2e3a6625ac9a3ca288030e99d640f",
+      "db_size": 1949976,
+      "signature": "0029bab90889f60d4d2a80dc8c67139ec300cf610d2458f2816d1486a969e64aa7bd3931fc1b1b9d879a177c5154ab24fea32c364eded605774a78fe70a6e206",
+      "signed_at": 1764286658,
+      "updated_at": "2025-11-27T23:37:33.992490Z"
     },
-    "linux_apps": {
+    "linux-apps": {
       "count": 1063,
       "db_sha256": "389989fdeaa78ee2a492004de1ff01117b725e594be457c516e4e0dbd9108d8d",
       "db_size": 205139,
-      "updated_at": "2025-11-27T20:20:58.331134Z"
+      "signature": "1ec03590a053356da61b3836c1f9f5a0cd945dac027a56f5418d76cf3deead668bd6bfdbd91dd911f248fe2ef017ede472be9a5f8c9f39e32ebe6f5085348508",
+      "signed_at": 1764286658,
+      "updated_at": "2025-11-27T23:37:35.076914Z"
     },
     "vulnerabilities": {
       "count": 18,
-      "db_sha256": "83aa4d6c528198ef2fdbf104bff0b387cf849f8bf1bdcd2b491815d2c267591d",
-      "db_size": 50851,
-      "updated_at": "2025-11-27T20:21:02.182182Z"
+      "db_sha256": "d4ba0f438c6b53a47955df09b7cad414f97d10a89f02ce7a14fe357b4bec5d1a",
+      "db_size": 50847,
+      "signature": "99dee4e45300df36f60f3fcbbe9171fb72d0a81ef215c55b0a9e39078d7e8d0028d7f7d09ffccbe3430e27516f6602798c022eaae7b54f819733d63a91b9640b",
+      "signed_at": 1764286658,
+      "updated_at": "2025-11-27T23:37:38.177829Z"
     }
   }
 }
