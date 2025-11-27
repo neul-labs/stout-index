@@ -1,6 +1,6 @@
 # brewx-index
 
-Pre-computed package index for [brewx](https://github.com/anthropics/brewx), a fast Rust-based Homebrew-compatible package manager.
+Pre-computed package index for [brewx](https://github.com/neul-labs/brewx), a fast Rust-based Homebrew-compatible package manager.
 
 ## Overview
 
@@ -70,16 +70,16 @@ The index can be accessed directly:
 
 ```bash
 # Base URL
-https://raw.githubusercontent.com/anthropics/brewx-index/main/
+https://raw.githubusercontent.com/neul-labs/brewx-index/main/
 
 # Manifest (version info)
-curl -s https://raw.githubusercontent.com/anthropics/brewx-index/main/manifest.json
+curl -s https://raw.githubusercontent.com/neul-labs/brewx-index/main/manifest.json
 
 # Formula index (compressed SQLite)
-curl -LO https://raw.githubusercontent.com/anthropics/brewx-index/main/formulas/index.db.zst
+curl -LO https://raw.githubusercontent.com/neul-labs/brewx-index/main/formulas/index.db.zst
 
 # Individual formula
-curl -s https://raw.githubusercontent.com/anthropics/brewx-index/main/formulas/data/j/jq.json.zst | zstd -d
+curl -s https://raw.githubusercontent.com/neul-labs/brewx-index/main/formulas/data/j/jq.json.zst | zstd -d
 ```
 
 ## Manifest Schema
