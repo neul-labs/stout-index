@@ -12,24 +12,36 @@ pattern as the Homebrew formula and cask indexes.
 """
 
 import argparse
+import asyncio
 import hashlib
 import json
 import logging
-import os
 import sqlite3
-import sys
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
-from urllib.request import urlopen, Request
-from urllib.error import HTTPError, URLError
 
-logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
-logger = logging.getLogger(__name__)
+import aiohttp
+import zstandard as zstd
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%H:%M:%S",
+)
+log = logging.getLogger(__name__)
 
 # API endpoints
 APPIMAGEHUB_API = "https://appimage.github.io/feed.json"
 FLATHUB_API = "https://flathub.org/api/v2/appstream"
+
+# Compression level (19 = max)
+ZSTD_LEVEL = 19
+
+# Concurrency settings
+MAX_CONCURRENT_WRITES = 100
+
 
 @dataclass
 class LinuxApp:
@@ -49,15 +61,6 @@ class LinuxApp:
     flatpak_id: Optional[str] = None
     snap_name: Optional[str] = None
 
-def fetch_json(url: str, timeout: int = 30) -> dict:
-    """Fetch JSON from a URL."""
-    request = Request(url, headers={'User-Agent': 'brewx/0.1'})
-    try:
-        with urlopen(request, timeout=timeout) as response:
-            return json.loads(response.read().decode('utf-8'))
-    except (HTTPError, URLError) as e:
-        logger.error(f"Failed to fetch {url}: {e}")
-        return {}
 
 def tokenize(name: str) -> str:
     """Convert app name to a token (lowercase, hyphenated)."""
@@ -70,13 +73,21 @@ def tokenize(name: str) -> str:
         token = token.replace('--', '-')
     return token.strip('-')
 
-def fetch_appimages() -> list[LinuxApp]:
-    """Fetch AppImage catalog from AppImageHub."""
-    logger.info("Fetching AppImageHub catalog...")
 
-    data = fetch_json(APPIMAGEHUB_API)
+async def fetch_appimages(session: aiohttp.ClientSession) -> list[LinuxApp]:
+    """Fetch AppImage catalog from AppImageHub."""
+    log.info("Fetching AppImageHub catalog...")
+
+    try:
+        async with session.get(APPIMAGEHUB_API) as response:
+            response.raise_for_status()
+            data = await response.json()
+    except aiohttp.ClientError as e:
+        log.error(f"Failed to fetch AppImageHub: {e}")
+        return []
+
     if not data or 'items' not in data:
-        logger.warning("No AppImage data available")
+        log.warning("No AppImage data available")
         return []
 
     apps = []
@@ -94,6 +105,10 @@ def fetch_appimages() -> list[LinuxApp]:
                     download_url = link.get('url')
                     break
 
+            # Filter None from categories
+            categories = item.get('categories', []) or []
+            categories = [c for c in categories if c is not None]
+
             app = LinuxApp(
                 token=tokenize(name),
                 name=name,
@@ -103,29 +118,32 @@ def fetch_appimages() -> list[LinuxApp]:
                 source='appimage',
                 download_url=download_url,
                 icon_url=item.get('icons', [None])[0] if item.get('icons') else None,
-                categories=item.get('categories', []),
+                categories=categories,
                 license=item.get('license'),
             )
             apps.append(app)
         except Exception as e:
-            logger.debug(f"Failed to parse AppImage entry: {e}")
+            log.debug(f"Failed to parse AppImage entry: {e}")
             continue
 
-    logger.info(f"Found {len(apps)} AppImages")
+    log.info(f"Found {len(apps)} AppImages")
     return apps
 
-def fetch_flatpaks() -> list[LinuxApp]:
+
+async def fetch_flatpaks(session: aiohttp.ClientSession) -> list[LinuxApp]:
     """Fetch Flatpak catalog from Flathub."""
-    logger.info("Fetching Flathub catalog...")
+    log.info("Fetching Flathub catalog...")
 
     apps = []
     seen_ids = set()
 
     try:
-        # Fetch the main appstream data
-        data = fetch_json(FLATHUB_API)
+        async with session.get(FLATHUB_API) as response:
+            response.raise_for_status()
+            data = await response.json()
+
         if not data:
-            logger.warning("No Flathub data available")
+            log.warning("No Flathub data available")
             return []
 
         # Handle both list and dict formats from the API
@@ -163,18 +181,19 @@ def fetch_flatpaks() -> list[LinuxApp]:
                 )
                 apps.append(app)
             except Exception as e:
-                logger.debug(f"Failed to parse Flatpak entry: {e}")
+                log.debug(f"Failed to parse Flatpak entry: {e}")
                 continue
 
-    except Exception as e:
-        logger.warning(f"Failed to fetch Flathub catalog: {e}")
+    except aiohttp.ClientError as e:
+        log.warning(f"Failed to fetch Flathub catalog: {e}")
 
-    logger.info(f"Found {len(apps)} Flatpaks")
+    log.info(f"Found {len(apps)} Flatpaks")
     return apps
+
 
 def create_database(apps: list[LinuxApp], db_path: Path) -> None:
     """Create SQLite database with Linux apps."""
-    logger.info(f"Creating database at {db_path}...")
+    log.info(f"Creating database at {db_path}...")
 
     db_path.parent.mkdir(parents=True, exist_ok=True)
     if db_path.exists():
@@ -284,18 +303,28 @@ def create_database(apps: list[LinuxApp], db_path: Path) -> None:
     conn.commit()
     conn.close()
 
-    logger.info(f"Inserted {len(apps)} Linux apps into database")
+    log.info(f"Inserted {len(apps)} Linux apps into database")
 
-def write_compressed_json(apps: list[LinuxApp], output_dir: Path) -> None:
-    """Write individual compressed JSON files for each app."""
-    import zstandard as zstd
 
-    apps_dir = output_dir / "linux-apps" / "data"
-    apps_dir.mkdir(parents=True, exist_ok=True)
+def compress_json(data: dict) -> bytes:
+    """Compress JSON data with zstd."""
+    json_bytes = json.dumps(data, separators=(",", ":")).encode("utf-8")
+    compressor = zstd.ZstdCompressor(level=ZSTD_LEVEL)
+    return compressor.compress(json_bytes)
 
-    compressor = zstd.ZstdCompressor(level=19)
 
-    for app in apps:
+def sha256_bytes(data: bytes) -> str:
+    """Calculate SHA256 hash of bytes."""
+    return hashlib.sha256(data).hexdigest()
+
+
+async def write_app_json(
+    app: LinuxApp,
+    apps_data_dir: Path,
+    semaphore: asyncio.Semaphore,
+) -> tuple[str, str]:
+    """Write compressed JSON for a single app. Returns (token, hash)."""
+    async with semaphore:
         app_data = {
             'token': app.token,
             'name': app.name,
@@ -312,40 +341,29 @@ def write_compressed_json(apps: list[LinuxApp], output_dir: Path) -> None:
             'snap_name': app.snap_name,
         }
 
+        compressed = compress_json(app_data)
+        json_hash = sha256_bytes(compressed)
+
         # Use first letter subdirectory for organization
         first_letter = app.token[0].lower() if app.token else '_'
-        subdir = apps_dir / first_letter
+        subdir = apps_data_dir / first_letter
         subdir.mkdir(exist_ok=True)
 
-        json_bytes = json.dumps(app_data, separators=(',', ':')).encode('utf-8')
-        compressed = compressor.compress(json_bytes)
-
         output_file = subdir / f"{app.token}.json.zst"
-        output_file.write_bytes(compressed)
 
-    logger.info(f"Wrote {len(apps)} compressed JSON files")
+        # Use thread pool for file I/O
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, output_file.write_bytes, compressed)
 
-def main():
-    import zstandard as zstd
-    from datetime import datetime
+        return app.token, json_hash
 
-    parser = argparse.ArgumentParser(description="Sync Linux apps metadata")
-    parser.add_argument('--output', '-o', default='.',
-                       help='Output directory (default: current directory)')
-    parser.add_argument('--sources', '-s', nargs='+',
-                       default=['appimage', 'flatpak'],
-                       choices=['appimage', 'flatpak', 'snap'],
-                       help='Sources to sync (default: appimage flatpak)')
-    parser.add_argument('--no-compress', action='store_true',
-                       help='Skip writing compressed JSON files')
-    parser.add_argument('--verbose', '-v', action='store_true',
-                       help='Enable verbose logging')
-    args = parser.parse_args()
 
-    if args.verbose:
-        logging.getLogger().setLevel(logging.DEBUG)
+async def sync(output_dir: Path, sources: list[str], no_compress: bool = False) -> dict:
+    """
+    Sync Linux apps from various sources.
 
-    output_dir = Path(args.output)
+    Returns manifest dict.
+    """
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Create linux-apps directory structure
@@ -356,20 +374,24 @@ def main():
 
     all_apps = []
 
-    # Fetch from each source
-    if 'appimage' in args.sources:
-        all_apps.extend(fetch_appimages())
+    # Fetch from each source in parallel
+    async with aiohttp.ClientSession(
+        headers={'User-Agent': 'brewx/0.1'},
+        timeout=aiohttp.ClientTimeout(total=60)
+    ) as session:
+        tasks = []
+        if 'appimage' in sources:
+            tasks.append(fetch_appimages(session))
+        if 'flatpak' in sources:
+            tasks.append(fetch_flatpaks(session))
 
-    if 'flatpak' in args.sources:
-        all_apps.extend(fetch_flatpaks())
-
-    # TODO: Add snap support
-    # if 'snap' in args.sources:
-    #     all_apps.extend(fetch_snaps())
+        results = await asyncio.gather(*tasks)
+        for apps in results:
+            all_apps.extend(apps)
 
     if not all_apps:
-        logger.error("No apps found from any source")
-        sys.exit(1)
+        log.error("No apps found from any source")
+        return {}
 
     # Deduplicate by token (prefer flatpak over appimage)
     seen_tokens = {}
@@ -381,16 +403,29 @@ def main():
             seen_tokens[app.token] = app
 
     unique_apps = list(seen_tokens.values())
-    logger.info(f"Total unique apps: {len(unique_apps)}")
+    log.info(f"Total unique apps: {len(unique_apps)}")
 
-    # Create database in linux-apps/
+    # Write individual JSON files in parallel
+    if not no_compress:
+        log.info("Writing individual JSON files...")
+        semaphore = asyncio.Semaphore(MAX_CONCURRENT_WRITES)
+
+        write_tasks = [
+            write_app_json(app, linux_apps_data_dir, semaphore)
+            for app in unique_apps
+        ]
+
+        results = await asyncio.gather(*write_tasks)
+        log.info(f"Wrote {len(results)} JSON files")
+
+    # Create database (SQLite operations are synchronous)
     db_path = linux_apps_dir / "index.db"
     create_database(unique_apps, db_path)
 
     # Compress database
-    logger.info("Compressing database...")
+    log.info("Compressing database...")
     db_bytes = db_path.read_bytes()
-    compressor = zstd.ZstdCompressor(level=19)
+    compressor = zstd.ZstdCompressor(level=ZSTD_LEVEL)
     compressed_db = compressor.compress(db_bytes)
 
     compressed_path = linux_apps_dir / "index.db.zst"
@@ -399,15 +434,11 @@ def main():
     # Remove uncompressed database
     db_path.unlink()
 
-    db_hash = hashlib.sha256(compressed_db).hexdigest()
-    logger.info(f"Database compressed: {len(db_bytes)} -> {len(compressed_db)} bytes")
-
-    # Write compressed JSON files
-    if not args.no_compress:
-        try:
-            write_compressed_json(unique_apps, output_dir)
-        except ImportError:
-            logger.warning("zstandard not available, skipping compressed JSON output")
+    db_hash = sha256_bytes(compressed_db)
+    log.info(
+        f"Database: {len(db_bytes)} bytes -> {len(compressed_db)} bytes "
+        f"({len(compressed_db)/len(db_bytes)*100:.1f}%)"
+    )
 
     # Create local manifest
     manifest = {
@@ -419,18 +450,76 @@ def main():
     manifest_path = linux_apps_dir / "manifest.json"
     manifest_path.write_text(json.dumps(manifest, indent=2))
 
-    logger.info("Linux apps sync complete!")
+    log.info(f"Created manifest: {manifest_path}")
 
     # Print summary
     by_source = {}
     for app in unique_apps:
         by_source[app.source] = by_source.get(app.source, 0) + 1
 
-    print(f"\nSummary:")
-    print(f"  Total apps: {len(unique_apps)}")
-    for source, count in sorted(by_source.items()):
-        print(f"  {source}: {count}")
-    print(f"  Database: {compressed_path}")
+    return {
+        "manifest": manifest,
+        "by_source": by_source,
+        "unique_apps": unique_apps,
+        "compressed_path": compressed_path,
+    }
+
+
+async def main_async():
+    parser = argparse.ArgumentParser(description="Sync Linux apps metadata")
+    parser.add_argument(
+        '--output', '-o',
+        type=Path,
+        default=Path('.'),
+        help='Output directory (default: current directory)'
+    )
+    parser.add_argument(
+        '--sources', '-s',
+        nargs='+',
+        default=['appimage', 'flatpak'],
+        choices=['appimage', 'flatpak', 'snap'],
+        help='Sources to sync (default: appimage flatpak)'
+    )
+    parser.add_argument(
+        '--no-compress',
+        action='store_true',
+        help='Skip writing compressed JSON files'
+    )
+    parser.add_argument(
+        '--dry-run',
+        action='store_true',
+        help='Show what would be done without writing files'
+    )
+    parser.add_argument(
+        '--verbose', '-v',
+        action='store_true',
+        help='Enable verbose logging'
+    )
+
+    args = parser.parse_args()
+
+    if args.verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
+
+    if args.dry_run:
+        log.info("Dry run mode - no files will be written")
+        log.info(f"Would sync from sources: {args.sources}")
+        return
+
+    result = await sync(args.output, args.sources, args.no_compress)
+
+    if result:
+        log.info("Linux apps sync complete!")
+        print(f"\nSummary:")
+        print(f"  Total apps: {result['manifest']['count']}")
+        for source, count in sorted(result['by_source'].items()):
+            print(f"  {source}: {count}")
+        print(f"  Database: {result['compressed_path']}")
+
+
+def main():
+    asyncio.run(main_async())
+
 
 if __name__ == '__main__':
     main()

@@ -3,22 +3,21 @@
 brewx index sync script.
 
 Fetches formula data from Homebrew API and builds:
-1. SQLite index database (index.db)
-2. Individual formula JSON files (formulas/<name>.json.zst)
-3. Manifest file (manifest.json)
+1. SQLite index database (formulas/index.db.zst)
+2. Individual formula JSON files (formulas/data/<letter>/<name>.json.zst)
+3. Local manifest file (formulas/manifest.json)
 """
 
 import argparse
+import asyncio
 import hashlib
 import json
 import logging
 import sqlite3
-import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Any
 
-import requests
+import aiohttp
 import zstandard as zstd
 
 # Configure logging
@@ -31,18 +30,20 @@ log = logging.getLogger(__name__)
 
 # Homebrew API endpoints
 HOMEBREW_FORMULA_API = "https://formulae.brew.sh/api/formula.json"
-HOMEBREW_CASK_API = "https://formulae.brew.sh/api/cask.json"
 
 # Compression level (19 = max)
 ZSTD_LEVEL = 19
 
+# Concurrency settings
+MAX_CONCURRENT_WRITES = 100
 
-def fetch_homebrew_formulas() -> list[dict]:
+
+async def fetch_homebrew_formulas(session: aiohttp.ClientSession) -> list[dict]:
     """Fetch all formulas from Homebrew API."""
     log.info(f"Fetching formulas from {HOMEBREW_FORMULA_API}")
-    response = requests.get(HOMEBREW_FORMULA_API, timeout=60)
-    response.raise_for_status()
-    formulas = response.json()
+    async with session.get(HOMEBREW_FORMULA_API) as response:
+        response.raise_for_status()
+        formulas = await response.json()
     log.info(f"Fetched {len(formulas)} formulas")
     return formulas
 
@@ -205,7 +206,32 @@ def sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def sync(output_dir: Path, full: bool = False) -> dict:
+async def write_formula_json(
+    formula_data: dict,
+    formulas_data_dir: Path,
+    semaphore: asyncio.Semaphore,
+) -> tuple[str, str]:
+    """Write compressed JSON for a single formula. Returns (name, hash)."""
+    async with semaphore:
+        name = formula_data["name"]
+        compressed = compress_json(formula_data)
+        json_hash = sha256_bytes(compressed)
+
+        # Write to formulas/data/<first_letter>/<name>.json.zst
+        first_letter = name[0].lower()
+        letter_dir = formulas_data_dir / first_letter
+        letter_dir.mkdir(exist_ok=True)
+
+        formula_path = letter_dir / f"{name}.json.zst"
+
+        # Use thread pool for file I/O
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, formula_path.write_bytes, compressed)
+
+        return name, json_hash
+
+
+async def sync(output_dir: Path, full: bool = False) -> dict:
     """
     Sync formulas from Homebrew API.
 
@@ -218,9 +244,32 @@ def sync(output_dir: Path, full: bool = False) -> dict:
     formulas_data_dir.mkdir(exist_ok=True)
 
     # Fetch formulas
-    hb_formulas = fetch_homebrew_formulas()
+    async with aiohttp.ClientSession() as session:
+        hb_formulas = await fetch_homebrew_formulas(session)
 
-    # Create database inside formulas/
+    # Transform all formulas in parallel using process pool for CPU-bound work
+    log.info("Transforming formulas...")
+    loop = asyncio.get_event_loop()
+    brewx_formulas = await loop.run_in_executor(
+        None,
+        lambda: [transform_formula(f) for f in hb_formulas]
+    )
+
+    # Write individual JSON files in parallel
+    log.info("Writing individual JSON files...")
+    semaphore = asyncio.Semaphore(MAX_CONCURRENT_WRITES)
+
+    write_tasks = [
+        write_formula_json(formula, formulas_data_dir, semaphore)
+        for formula in brewx_formulas
+    ]
+
+    results = await asyncio.gather(*write_tasks)
+    json_hashes = {name: hash_val for name, hash_val in results}
+
+    log.info(f"Wrote {len(results)} JSON files")
+
+    # Create database (SQLite operations are synchronous)
     db_path = formulas_dir / "index.db"
     conn = create_database(db_path)
     cursor = conn.cursor()
@@ -228,25 +277,11 @@ def sync(output_dir: Path, full: bool = False) -> dict:
     timestamp = int(datetime.utcnow().timestamp())
     formula_count = 0
 
-    log.info("Processing formulas...")
+    log.info("Inserting into database...")
 
-    for hb_formula in hb_formulas:
-        name = hb_formula["name"]
-
-        # Transform to brewx format
-        brewx_formula = transform_formula(hb_formula)
-
-        # Compress and write individual JSON
-        compressed = compress_json(brewx_formula)
-        json_hash = sha256_bytes(compressed)
-
-        # Write to formulas/data/<first_letter>/<name>.json.zst
-        first_letter = name[0].lower()
-        letter_dir = formulas_data_dir / first_letter
-        letter_dir.mkdir(exist_ok=True)
-
-        formula_path = letter_dir / f"{name}.json.zst"
-        formula_path.write_bytes(compressed)
+    for brewx_formula in brewx_formulas:
+        name = brewx_formula["name"]
+        json_hash = json_hashes.get(name, "")
 
         # Insert into index
         version = brewx_formula["version"]
@@ -306,8 +341,8 @@ def sync(output_dir: Path, full: bool = False) -> dict:
 
         formula_count += 1
 
-        if formula_count % 500 == 0:
-            log.info(f"  Processed {formula_count} formulas...")
+        if formula_count % 1000 == 0:
+            log.info(f"  Inserted {formula_count} formulas...")
 
     # Set metadata
     version = datetime.utcnow().strftime("%Y.%m.%d.%H%M")
@@ -363,14 +398,14 @@ def sync(output_dir: Path, full: bool = False) -> dict:
     return manifest
 
 
-def main():
+async def main_async():
     parser = argparse.ArgumentParser(description="Sync brewx index from Homebrew API")
     parser.add_argument(
         "--output",
         "-o",
         type=Path,
-        default=Path("dist"),
-        help="Output directory (default: dist)",
+        default=Path("."),
+        help="Output directory (default: current directory)",
     )
     parser.add_argument(
         "--full",
@@ -387,17 +422,21 @@ def main():
 
     if args.dry_run:
         log.info("Dry run mode - no files will be written")
-        # Just fetch and show stats
-        formulas = fetch_homebrew_formulas()
+        async with aiohttp.ClientSession() as session:
+            formulas = await fetch_homebrew_formulas(session)
         log.info(f"Would process {len(formulas)} formulas")
         return
 
-    manifest = sync(args.output, full=args.full)
+    manifest = await sync(args.output, full=args.full)
 
     log.info("Sync complete!")
     log.info(f"  Version: {manifest['version']}")
     log.info(f"  Formulas: {manifest['formula_count']}")
     log.info(f"  Index size: {manifest['index_size']} bytes")
+
+
+def main():
+    asyncio.run(main_async())
 
 
 if __name__ == "__main__":

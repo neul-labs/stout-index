@@ -3,7 +3,7 @@
 brewx vulnerability index sync script.
 
 Fetches vulnerability data from OSV (Open Source Vulnerabilities) and builds:
-1. SQLite vulnerability database (vulnerabilities.db)
+1. SQLite vulnerability database (vulnerabilities/index.db.zst)
 2. Manifest file with checksums
 
 Data sources:
@@ -12,18 +12,15 @@ Data sources:
 """
 
 import argparse
+import asyncio
 import hashlib
 import json
 import logging
 import sqlite3
-import sys
-import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
-from typing import Any
 
-import requests
+import aiohttp
 import zstandard as zstd
 
 # Configure logging
@@ -39,6 +36,9 @@ OSV_API = "https://api.osv.dev/v1/query"
 
 # Compression level (19 = max)
 ZSTD_LEVEL = 19
+
+# Concurrency settings
+MAX_CONCURRENT_QUERIES = 10
 
 # Default ecosystem mappings for common formulas
 # Maps formula name -> (ecosystem, package_name)
@@ -115,20 +115,25 @@ def load_mappings(mappings_file: Path | None) -> dict[str, tuple[str, str]]:
     return mappings
 
 
-def query_osv(ecosystem: str, package: str) -> list[dict]:
+async def query_osv(
+    session: aiohttp.ClientSession,
+    ecosystem: str,
+    package: str,
+    semaphore: asyncio.Semaphore,
+) -> list[dict]:
     """Query OSV API for vulnerabilities affecting a package."""
-    try:
-        response = requests.post(
-            OSV_API,
-            json={"package": {"name": package, "ecosystem": ecosystem}},
-            timeout=30,
-        )
-        response.raise_for_status()
-        data = response.json()
-        return data.get("vulns", [])
-    except requests.RequestException as e:
-        log.debug(f"OSV query failed for {ecosystem}/{package}: {e}")
-        return []
+    async with semaphore:
+        try:
+            async with session.post(
+                OSV_API,
+                json={"package": {"name": package, "ecosystem": ecosystem}},
+            ) as response:
+                response.raise_for_status()
+                data = await response.json()
+                return data.get("vulns", [])
+        except aiohttp.ClientError as e:
+            log.debug(f"OSV query failed for {ecosystem}/{package}: {e}")
+            return []
 
 
 def extract_severity(vuln: dict) -> str | None:
@@ -140,12 +145,6 @@ def extract_severity(vuln: dict) -> str | None:
                 score_str = sev.get("score", "")
                 # Parse CVSS vector string to get base score
                 if "CVSS:3" in score_str:
-                    # Extract base score from vector
-                    parts = score_str.split("/")
-                    for part in parts:
-                        if part.startswith("CVSS:3"):
-                            continue
-                        # The format varies, so we estimate from the vector
                     # Fallback to classification from vector components
                     if any(x in score_str for x in ["A:H", "C:H", "I:H"]):
                         return "high"
@@ -268,10 +267,21 @@ def compress_database(db_path: Path) -> tuple[bytes, str]:
     return compressed, hash_val
 
 
-def sync_vulnerabilities(
+async def fetch_vulns_for_formula(
+    session: aiohttp.ClientSession,
+    formula: str,
+    ecosystem: str,
+    package: str,
+    semaphore: asyncio.Semaphore,
+) -> tuple[str, str, str, list[dict]]:
+    """Fetch vulnerabilities for a single formula. Returns (formula, ecosystem, package, vulns)."""
+    vulns = await query_osv(session, ecosystem, package, semaphore)
+    return formula, ecosystem, package, vulns
+
+
+async def sync_vulnerabilities(
     output_dir: Path,
     mappings: dict[str, tuple[str, str]],
-    parallel: int = 4,
 ) -> dict:
     """
     Sync vulnerabilities from OSV API.
@@ -289,7 +299,6 @@ def sync_vulnerabilities(
     conn = create_database(db_path)
     cursor = conn.cursor()
 
-    timestamp = int(datetime.utcnow().timestamp())
     vuln_count = 0
     affected_count = 0
     package_count = 0
@@ -297,36 +306,36 @@ def sync_vulnerabilities(
 
     log.info(f"Querying OSV for {len(mappings)} formula mappings...")
 
-    # Query OSV in parallel
-    results: dict[str, list[dict]] = {}
+    # Query OSV in parallel using async
+    semaphore = asyncio.Semaphore(MAX_CONCURRENT_QUERIES)
 
-    def fetch_vulns(formula: str, ecosystem: str, package: str) -> tuple[str, list]:
-        vulns = query_osv(ecosystem, package)
-        return formula, vulns
-
-    with ThreadPoolExecutor(max_workers=parallel) as executor:
-        futures = {
-            executor.submit(fetch_vulns, formula, eco, pkg): formula
+    async with aiohttp.ClientSession(
+        timeout=aiohttp.ClientTimeout(total=30)
+    ) as session:
+        tasks = [
+            fetch_vulns_for_formula(session, formula, eco, pkg, semaphore)
             for formula, (eco, pkg) in mappings.items()
-        }
+        ]
 
-        for future in as_completed(futures):
-            formula = futures[future]
-            try:
-                _, vulns = future.result()
-                if vulns:
-                    results[formula] = vulns
-                    log.debug(f"  {formula}: {len(vulns)} vulnerabilities")
-            except Exception as e:
-                log.warning(f"Error fetching {formula}: {e}")
+        results = await asyncio.gather(*tasks, return_exceptions=True)
 
-    log.info(f"Found vulnerabilities for {len(results)} formulas")
+    # Process results
+    formula_vulns: dict[str, tuple[str, str, list[dict]]] = {}
+    for result in results:
+        if isinstance(result, Exception):
+            log.warning(f"Error fetching vulnerabilities: {result}")
+            continue
+        formula, ecosystem, package, vulns = result
+        if vulns:
+            formula_vulns[formula] = (ecosystem, package, vulns)
+            log.debug(f"  {formula}: {len(vulns)} vulnerabilities")
+
+    log.info(f"Found vulnerabilities for {len(formula_vulns)} formulas")
 
     # Process results and insert into database
     seen_vulns: set[str] = set()
 
-    for formula, vulns in results.items():
-        ecosystem, package = mappings[formula]
+    for formula, (ecosystem, package, vulns) in formula_vulns.items():
         package_count += 1
 
         # Track ecosystem stats
@@ -454,7 +463,7 @@ def sync_vulnerabilities(
     return manifest
 
 
-def main():
+async def main_async():
     parser = argparse.ArgumentParser(
         description="Sync brewx vulnerability index from OSV"
     )
@@ -462,21 +471,14 @@ def main():
         "--output",
         "-o",
         type=Path,
-        default=Path("dist/vulnerabilities"),
-        help="Output directory (default: dist/vulnerabilities)",
+        default=Path("."),
+        help="Output directory (default: current directory)",
     )
     parser.add_argument(
         "--mappings",
         "-m",
         type=Path,
         help="Path to formula_ecosystems.json mappings file",
-    )
-    parser.add_argument(
-        "--parallel",
-        "-j",
-        type=int,
-        default=4,
-        help="Number of parallel OSV queries (default: 4)",
     )
     parser.add_argument(
         "--dry-run",
@@ -499,7 +501,7 @@ def main():
             log.info(f"  ... and {len(mappings) - 20} more")
         return
 
-    manifest = sync_vulnerabilities(args.output, mappings, args.parallel)
+    manifest = await sync_vulnerabilities(args.output, mappings)
 
     log.info("Sync complete!")
     log.info(f"  Version: {manifest['version']}")
@@ -507,6 +509,10 @@ def main():
     log.info(f"  Mappings: {manifest['affected_mapping_count']}")
     log.info(f"  Formulas: {manifest['formula_count']}")
     log.info(f"  Index size: {manifest['index_size']} bytes")
+
+
+def main():
+    asyncio.run(main_async())
 
 
 if __name__ == "__main__":
