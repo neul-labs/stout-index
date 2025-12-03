@@ -1,39 +1,39 @@
 {
-  "version": "2025.12.03.0142",
-  "created_at": "2025-12-03T01:42:48Z",
+  "version": "2025.12.03.0430",
+  "created_at": "2025-12-03T04:30:03Z",
   "brewx_min_version": "0.1.0",
   "indexes": {
     "formulas": {
       "count": 8071,
-      "db_sha256": "2fd4cf601e640ffa2d710628c14575f2f0896b12ab9704da8b5d1b3ac3727d78",
-      "db_size": 2852485,
-      "signature": "b9b386ee05f6052d2ea03fcc737ed8f930255bbdee9c5c946c625ba2e9290a233cdcc7af5c4cd8e71abf685624ecef5c424319b4fbcbde3c0722bfa91924de01",
-      "signed_at": 1764726168,
-      "updated_at": "2025-12-03T01:42:38.166524Z"
+      "db_sha256": "1ff3be6922c258f1a00e7da4c15f580312c1a41096b7981a40b6281fd29c05cd",
+      "db_size": 2852521,
+      "signature": "2cf5c3dc200e82d95efb5f4a9749604aa6ed5c46a279a50423bcebe3a6402aa34f4f52800ce61683ef9625c3f91789bfae6b3ec684b033108effbaa9019e8205",
+      "signed_at": 1764736203,
+      "updated_at": "2025-12-03T04:29:53.368323Z"
     },
     "casks": {
       "count": 0,
-      "db_sha256": "c19e60f27dc21df768b1086313212df2775e936caa6fa2488e73f45f50560193",
-      "db_size": 1954488,
-      "signature": "40129e879f0f59b7eb8f22cbbb1873628289c3cb43152a02a0dba8a56b79363cda681fc97aa5e17e56b2f87c6530d1412407dc258363bf1b39c99bf1d73f2504",
-      "signed_at": 1764726168,
-      "updated_at": "2025-12-03T01:42:43.663633Z"
+      "db_sha256": "1a7608c56de7660772e2143b5850dc504fb6d92edc25dafbcc2d199566e2d561",
+      "db_size": 1954427,
+      "signature": "7169da176403809ab5f4cb41bf4f67c3c4862784f0017553e2c15a4e512d5526d0624e306c0d757e2207a9fe1c0a4d45c6c183f365d574e8cac21457d0fad305",
+      "signed_at": 1764736203,
+      "updated_at": "2025-12-03T04:29:59.336652Z"
     },
     "linux-apps": {
       "count": 1068,
       "db_sha256": "b4e2c1a4e5adcf2a98804400badd116825da1021455fdd48bd9d543086dca70f",
       "db_size": 206693,
-      "signature": "8bcb331dce72dafab1868e1b2d6f74183ce85e45e4dafb784a1ada1ebf6eff57fa4d9708fdff186bfe0dc1859cde643cf75eb5d2bf21597bcda5c69ebd31e408",
-      "signed_at": 1764726168,
-      "updated_at": "2025-12-03T01:42:44.745342Z"
+      "signature": "1dc7a06a5a91061765251c06db8d3bc38a3fe0b614f9485a71919d1bc4328b0f36290e8ef120d2bf33053061932cc36602fd8e89e85488d7948864af678ab100",
+      "signed_at": 1764736203,
+      "updated_at": "2025-12-03T04:30:00.672228Z"
     },
     "vulnerabilities": {
       "count": 18,
-      "db_sha256": "570d640c776d51a25044c0970c2c4bf0e26c2d08d8ada027dad470aac8c079e9",
-      "db_size": 51043,
-      "signature": "9a00dbfeba6dd1218b4fd2bf840e716cc4d73c9ec1f6468c1a1b06ff1821aaa9dbd4e87b023845ccaacb43b33df942a8a45a95cf2921f4035baca19a89d75f04",
-      "signed_at": 1764726168,
-      "updated_at": "2025-12-03T01:42:47.955800Z"
+      "db_sha256": "dc71d6ea51ac066cccd0f58a7db42932a33da64fa02eff5e1a1356ab7b765719",
+      "db_size": 51048,
+      "signature": "4ce322fdc67bfa8d34f513a86daa5f4bab92305f6a907dcf25b45a50284255526512ae26b83036b14622a17aff074b5a6f99cc241dc688a0d80fd50503390b05",
+      "signed_at": 1764736203,
+      "updated_at": "2025-12-03T04:30:03.298336Z"
     }
   }
 }
