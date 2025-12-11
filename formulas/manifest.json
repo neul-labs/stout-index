@@ -1,11 +1,11 @@
 {
-  "version": "2025.12.11.1632",
-  "index_version": "2025.12.11.1632",
-  "index_sha256": "251b28c72cb8f7ca5a43fca713521ec414d2f06323c2a3ee809ad15b2e3e3e47",
-  "index_size": 2855765,
-  "signed_at": 1765470785,
+  "version": "2025.12.11.2025",
+  "index_version": "2025.12.11.2025",
+  "index_sha256": "6982e273fb238834a86789b9972c77f788f3dcc1a42a547dbc51034e0abbe8cd",
+  "index_size": 2855452,
+  "signed_at": 1765484760,
   "formula_count": 8094,
   "cask_count": 0,
-  "signature": "3cc0fa0d0209afe55cc54e43b573b141592c46632c435cdd9cc3810173ed3b9443db5cf12556b13559f970901a9b9b876e9d9d97d4d0d0aee2a369326263750f",
-  "created_at": "2025-12-11T16:32:55.554540Z"
+  "signature": "d5a417cd053ce6a5bf4e17e65c32fdbde5be47751848de2da125ae6adbdce5e1c1cd26bbc62139e723a4d7f04e04b66bf41305c20f3b8816f7cb957bf83be906",
+  "created_at": "2025-12-11T20:25:50.371391Z"
 }
