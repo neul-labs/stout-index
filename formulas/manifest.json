@@ -1,11 +1,9 @@
 {
-  "version": "2026.01.09.1630",
-  "index_version": "2026.01.09.1630",
-  "index_sha256": "b143bc982c84d46adb2a7acc750f3d0b78057f1b3eb9965e350e39b8f3b645c5",
-  "index_size": 2850312,
-  "signed_at": 1767976259,
-  "formula_count": 8132,
-  "cask_count": 0,
-  "signature": "45be6e76bd4f82ea9595b021e0c7b08a44a83b10edde70f366e1803f0934eb2476c0005dc579ed85234cc852e85875b83670e0e4c2d9cc6a0a75c6158185a80e",
-  "created_at": "2026-01-09T16:30:50.541475Z"
+  "version": "2026.01.26.1636",
+  "index_version": "2026.01.26.1636",
+  "index_sha256": "c70c1c0068f0b03b10cad3a15a066a56d4d61d11b46e145d59a893118094eec5",
+  "index_size": 2849462,
+  "formula_count": 8165,
+  "created_at": "2026-01-26T16:36:38.614580Z",
+  "homebrew_commit": "7c07bf8db3eadffb73e52b1d3b082d10ab06f6c3"
 }

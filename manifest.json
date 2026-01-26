@@ -1,39 +1,31 @@
 {
-  "version": "2026.01.09.1630",
-  "created_at": "2026-01-09T16:30:59Z",
+  "version": "2026.01.26.1636",
+  "created_at": "2026-01-26T16:36:48.025475Z",
   "stout_min_version": "0.1.0",
   "indexes": {
     "formulas": {
-      "count": 8132,
-      "db_sha256": "b143bc982c84d46adb2a7acc750f3d0b78057f1b3eb9965e350e39b8f3b645c5",
-      "db_size": 2850312,
-      "signature": "45be6e76bd4f82ea9595b021e0c7b08a44a83b10edde70f366e1803f0934eb2476c0005dc579ed85234cc852e85875b83670e0e4c2d9cc6a0a75c6158185a80e",
-      "signed_at": 1767976259,
-      "updated_at": "2026-01-09T16:30:50.541475Z"
+      "count": 8165,
+      "db_sha256": "c70c1c0068f0b03b10cad3a15a066a56d4d61d11b46e145d59a893118094eec5",
+      "db_size": 2849462,
+      "updated_at": "2026-01-26T16:36:38.608439Z"
     },
     "casks": {
-      "count": 0,
-      "db_sha256": "2bda8da7ea822f7e816934a9f23acaf3f85c99fee49733f6f9cccef3c92d9d69",
-      "db_size": 1905701,
-      "signature": "8d566b3b22500b16965ffd5d60b789b9ebbf4374335dbe62bd18b80b4a6cdc851b5b361f1241f7785786318aa15dc5c9e6e5ea77f2a7a4f14505f060b936a30a",
-      "signed_at": 1767976259,
-      "updated_at": "2026-01-09T16:30:55.359704Z"
+      "count": 7529,
+      "db_sha256": "964a32fd19b3127d6510154eb24ee5a8fa981e3bd027c4342c875637de266526",
+      "db_size": 1895742,
+      "updated_at": "2026-01-26T16:36:43.709433Z"
     },
-    "linux-apps": {
+    "linux_apps": {
       "count": 1072,
       "db_sha256": "487877b12217e391f6f95d9b51a5c34d9daa08ae5d70d2eb471422053a10be17",
       "db_size": 207339,
-      "signature": "93889abc63379b82cea7bed426c78bf28e39cf384cd7c199c000dfb2ad8085a081641ca376f78908538bbc961e58803fcd5f40c85e738241929caf67ec99bb02",
-      "signed_at": 1767976259,
-      "updated_at": "2026-01-09T16:30:56.640505Z"
+      "updated_at": "2026-01-26T16:36:44.985431Z"
     },
     "vulnerabilities": {
       "count": 18,
-      "db_sha256": "741ac460b938d68c9e7858a88842e009ad95e2d9bd695c18cb31d13b8ea63122",
-      "db_size": 51256,
-      "signature": "6e92134851bcd6f116954f2345573aa34cc341c393f5903cc1ddd1f65f8e757fc7525e5a79280595f0879597c5428cc9928e55a0521575e0d81bb34155f7b202",
-      "signed_at": 1767976259,
-      "updated_at": "2026-01-09T16:30:59.581171Z"
+      "db_sha256": "85218ef32455de2c90ed250c966f181dd1ff50e8bd09e6138db7a0e94b75d3eb",
+      "db_size": 51430,
+      "updated_at": "2026-01-26T16:36:47.934428Z"
     }
   }
 }
