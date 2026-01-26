@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-brewx index signing tool.
+stout index signing tool.
 
 This script handles:
 1. Generating Ed25519 keypairs for signing
@@ -8,7 +8,7 @@ This script handles:
 3. Verifying signatures
 
 The private key should be kept secure (GitHub Secrets for CI).
-The public key is embedded in the brewx binary.
+The public key is embedded in the stout binary.
 """
 
 import argparse
@@ -56,8 +56,8 @@ def generate_keypair(output_dir: Path) -> tuple[str, str]:
     # Save keys
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    private_key_path = output_dir / "brewx-index.key"
-    public_key_path = output_dir / "brewx-index.pub"
+    private_key_path = output_dir / "stout-index.key"
+    public_key_path = output_dir / "stout-index.pub"
 
     # Private key - restricted permissions
     private_key_path.write_text(private_hex)
@@ -73,9 +73,9 @@ def generate_keypair(output_dir: Path) -> tuple[str, str]:
     print(f"Public key (hex): {public_hex}")
     print(f"")
     print(f"⚠️  Keep the private key secure!")
-    print(f"   Add it to GitHub Secrets as BREWX_SIGNING_KEY")
+    print(f"   Add it to GitHub Secrets as STOUT_SIGNING_KEY")
     print(f"")
-    print(f"📋 Update brewx source with this public key:")
+    print(f"📋 Update stout source with this public key:")
     print(f'   pub const DEFAULT_PUBLIC_KEY_HEX: &str = "{public_hex}";')
 
     return public_hex, private_hex
@@ -161,7 +161,7 @@ def sign_manifest(
     index_version = existing.get("version", time.strftime("%Y.%m.%d.%H%M"))
 
     # Create the signed data string (must match Rust verification)
-    signed_data = f"brewx-index:v{version}:{db_hash}:{signed_at}:{index_version}:{formula_count}:{cask_count}"
+    signed_data = f"stout-index:v{version}:{db_hash}:{signed_at}:{index_version}:{formula_count}:{cask_count}"
 
     # Sign the data
     signature = private_key.sign(signed_data.encode())
@@ -192,7 +192,7 @@ def verify_manifest(manifest: dict, public_key: Ed25519PublicKey) -> bool:
     # Reconstruct signed data - always use format version 1
     # The signed_data format must match what's used in sign_manifest and Rust code
     signed_data = (
-        f"brewx-index:v1:"
+        f"stout-index:v1:"
         f"{manifest['index_sha256']}:"
         f"{manifest['signed_at']}:"
         f"{manifest.get('index_version', manifest['version'])}:"
@@ -252,7 +252,7 @@ def sign_all_indexes(base_dir: Path, private_key: Ed25519PrivateKey) -> dict:
     root_manifest.update({
         "version": time.strftime("%Y.%m.%d.%H%M"),
         "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "brewx_min_version": "0.1.0",
+        "stout_min_version": "0.1.0",
         "indexes": indexes,
     })
 
@@ -264,7 +264,7 @@ def sign_all_indexes(base_dir: Path, private_key: Ed25519PrivateKey) -> dict:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="brewx index signing tool",
+        description="stout index signing tool",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -272,13 +272,13 @@ Examples:
   python sign_index.py generate --output ./keys
 
   # Sign all indexes using key from environment
-  python sign_index.py sign --key '$BREWX_SIGNING_KEY' --index-dir ../
+  python sign_index.py sign --key '$STOUT_SIGNING_KEY' --index-dir ../
 
   # Sign using key file
-  python sign_index.py sign --key ./keys/brewx-index.key --index-dir ../
+  python sign_index.py sign --key ./keys/stout-index.key --index-dir ../
 
   # Verify a manifest
-  python sign_index.py verify --key ./keys/brewx-index.pub --manifest ../formulas/manifest.json
+  python sign_index.py verify --key ./keys/stout-index.pub --manifest ../formulas/manifest.json
 """,
     )
 

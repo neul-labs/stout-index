@@ -1,7 +1,7 @@
 {
   "version": "2026.01.09.1630",
   "created_at": "2026-01-09T16:30:59Z",
-  "brewx_min_version": "0.1.0",
+  "stout_min_version": "0.1.0",
   "indexes": {
     "formulas": {
       "count": 8132,

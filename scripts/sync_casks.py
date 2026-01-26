@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-brewx cask index sync script.
+stout cask index sync script.
 
 Fetches cask data from Homebrew API and builds:
 1. SQLite index database (casks/index.db.zst)
@@ -190,11 +190,11 @@ def extract_artifacts(hb_cask: dict) -> list[dict]:
 
 
 def transform_cask(hb_cask: dict) -> dict:
-    """Transform Homebrew cask JSON to brewx format."""
+    """Transform Homebrew cask JSON to stout format."""
     # Extract artifacts
     artifacts = extract_artifacts(hb_cask)
 
-    # Build brewx format
+    # Build stout format
     return {
         "token": hb_cask["token"],
         "name": hb_cask.get("name", []),
@@ -360,7 +360,7 @@ async def sync(output_dir: Path, full: bool = False) -> dict:
     # Transform all casks
     log.info("Transforming casks...")
     loop = asyncio.get_event_loop()
-    brewx_casks = await loop.run_in_executor(
+    stout_casks = await loop.run_in_executor(
         None,
         lambda: [transform_cask(c) for c in hb_casks]
     )
@@ -371,7 +371,7 @@ async def sync(output_dir: Path, full: bool = False) -> dict:
 
     write_tasks = [
         write_cask_json(cask, data_dir, semaphore)
-        for cask in brewx_casks
+        for cask in stout_casks
     ]
 
     results = await asyncio.gather(*write_tasks)
@@ -389,21 +389,21 @@ async def sync(output_dir: Path, full: bool = False) -> dict:
 
     log.info("Inserting into database...")
 
-    for brewx_cask in brewx_casks:
-        token = brewx_cask["token"]
+    for stout_cask in stout_casks:
+        token = stout_cask["token"]
         json_hash = json_hashes.get(token, "")
 
-        version = brewx_cask["version"] or ""
-        sha256 = brewx_cask["sha256"]
-        url = brewx_cask["url"]
-        homepage = brewx_cask["homepage"]
-        desc = brewx_cask["desc"]
-        tap = brewx_cask.get("tap", "homebrew/cask")
-        auto_updates = 1 if brewx_cask["auto_updates"] else 0
-        deprecated = 1 if brewx_cask["deprecated"] else 0
-        disabled = 1 if brewx_cask["disabled"] else 0
+        version = stout_cask["version"] or ""
+        sha256 = stout_cask["sha256"]
+        url = stout_cask["url"]
+        homepage = stout_cask["homepage"]
+        desc = stout_cask["desc"]
+        tap = stout_cask.get("tap", "homebrew/cask")
+        auto_updates = 1 if stout_cask["auto_updates"] else 0
+        deprecated = 1 if stout_cask["deprecated"] else 0
+        disabled = 1 if stout_cask["disabled"] else 0
 
-        name_str = ", ".join(brewx_cask["name"]) if brewx_cask["name"] else token
+        name_str = ", ".join(stout_cask["name"]) if stout_cask["name"] else token
 
         cursor.execute(
             """
@@ -429,7 +429,7 @@ async def sync(output_dir: Path, full: bool = False) -> dict:
         )
 
         # Insert artifacts
-        for artifact in brewx_cask["artifacts"]:
+        for artifact in stout_cask["artifacts"]:
             artifact_type = artifact.get("type", "")
             source = artifact.get("source", artifact.get("path", ""))
             target = artifact.get("target")
@@ -440,7 +440,7 @@ async def sync(output_dir: Path, full: bool = False) -> dict:
             )
 
         # Insert dependencies
-        depends_on = brewx_cask.get("depends_on", {})
+        depends_on = stout_cask.get("depends_on", {})
         if depends_on:
             if "formula" in depends_on:
                 for formula in depends_on["formula"]:
@@ -527,7 +527,7 @@ async def sync(output_dir: Path, full: bool = False) -> dict:
 
 
 async def main_async():
-    parser = argparse.ArgumentParser(description="Sync brewx cask index from Homebrew API")
+    parser = argparse.ArgumentParser(description="Sync stout cask index from Homebrew API")
     parser.add_argument(
         "--output",
         "-o",

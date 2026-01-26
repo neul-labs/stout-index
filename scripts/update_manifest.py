@@ -105,7 +105,7 @@ def update_manifest(output_dir: Path) -> dict:
     manifest = {
         "version": version,
         "created_at": datetime.utcnow().isoformat() + "Z",
-        "brewx_min_version": "0.1.0",
+        "stout_min_version": "0.1.0",
         "indexes": {
             "formulas": formulas_info,
             "casks": casks_info,
@@ -130,7 +130,7 @@ def update_manifest(output_dir: Path) -> dict:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Update brewx-index manifest")
+    parser = argparse.ArgumentParser(description="Update stout-index manifest")
     parser.add_argument(
         "--output",
         "-o",

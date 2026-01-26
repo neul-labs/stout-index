@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-brewx vulnerability index sync script.
+stout vulnerability index sync script.
 
 Fetches vulnerability data from OSV (Open Source Vulnerabilities) and builds:
 1. SQLite vulnerability database (vulnerabilities/index.db.zst)
@@ -228,7 +228,7 @@ def create_database(db_path: Path) -> sqlite3.Connection:
         CREATE TABLE affected_packages (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             vuln_id TEXT NOT NULL,
-            formula TEXT NOT NULL,            -- brewx formula name
+            formula TEXT NOT NULL,            -- stout formula name
             ecosystem TEXT,                   -- Original ecosystem (npm, PyPI, etc.)
             package TEXT,                     -- Original package name
             affected_versions TEXT,           -- Version range expression
@@ -465,7 +465,7 @@ async def sync_vulnerabilities(
 
 async def main_async():
     parser = argparse.ArgumentParser(
-        description="Sync brewx vulnerability index from OSV"
+        description="Sync stout vulnerability index from OSV"
     )
     parser.add_argument(
         "--output",

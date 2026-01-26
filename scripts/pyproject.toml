@@ -1,7 +1,7 @@
 [project]
-name = "brewx-index-sync"
+name = "stout-index-sync"
 version = "0.1.0"
-description = "Sync scripts for brewx package index"
+description = "Sync scripts for stout package index"
 requires-python = ">=3.11"
 dependencies = [
     "aiohttp>=3.9.0",

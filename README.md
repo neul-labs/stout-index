@@ -1,15 +1,15 @@
-# brewx-index
+# stout-index
 
-Pre-computed package index for [brewx](https://github.com/neul-labs/brewx), a fast Rust-based Homebrew-compatible package manager.
+Pre-computed package index for [stout](https://github.com/neul-labs/stout), a fast Rust-based Homebrew-compatible package manager.
 
 ## Overview
 
-This repository contains pre-processed package metadata that brewx downloads for instant searches and queries. By pre-computing indexes at build time rather than runtime, brewx achieves 10-100x faster operations than traditional package managers.
+This repository contains pre-processed package metadata that stout downloads for instant searches and queries. By pre-computing indexes at build time rather than runtime, stout achieves 10-100x faster operations than traditional package managers.
 
 ## Index Structure
 
 ```
-brewx-index/
+stout-index/
 ├── manifest.json           # Version info, checksums, package counts
 ├── formulas/
 │   ├── index.db.zst        # SQLite database with FTS5 search (~1.5MB)
@@ -52,16 +52,16 @@ This index is automatically updated via GitHub Actions:
 
 ## Using the Index
 
-### For brewx Users
+### For stout Users
 
-brewx automatically downloads and caches this index:
+stout automatically downloads and caches this index:
 
 ```bash
 # Update to latest index
-brewx update
+stout update
 
 # Force re-download
-brewx update --force
+stout update --force
 ```
 
 ### For Developers
@@ -70,16 +70,16 @@ The index can be accessed directly:
 
 ```bash
 # Base URL
-https://raw.githubusercontent.com/neul-labs/brewx-index/main/
+https://raw.githubusercontent.com/neul-labs/stout-index/main/
 
 # Manifest (version info)
-curl -s https://raw.githubusercontent.com/neul-labs/brewx-index/main/manifest.json
+curl -s https://raw.githubusercontent.com/neul-labs/stout-index/main/manifest.json
 
 # Formula index (compressed SQLite)
-curl -LO https://raw.githubusercontent.com/neul-labs/brewx-index/main/formulas/index.db.zst
+curl -LO https://raw.githubusercontent.com/neul-labs/stout-index/main/formulas/index.db.zst
 
 # Individual formula
-curl -s https://raw.githubusercontent.com/neul-labs/brewx-index/main/formulas/data/j/jq.json.zst | zstd -d
+curl -s https://raw.githubusercontent.com/neul-labs/stout-index/main/formulas/data/j/jq.json.zst | zstd -d
 ```
 
 ## Manifest Schema
@@ -88,7 +88,7 @@ curl -s https://raw.githubusercontent.com/neul-labs/brewx-index/main/formulas/da
 {
   "version": "2024.01.15.1200",
   "created_at": "2024-01-15T12:00:00Z",
-  "brewx_min_version": "0.1.0",
+  "stout_min_version": "0.1.0",
   "indexes": {
     "formulas": {
       "count": 8000,

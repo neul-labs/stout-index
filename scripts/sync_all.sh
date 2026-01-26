@@ -1,11 +1,11 @@
 #!/bin/bash
-# Sync all brewx indexes
+# Sync all stout indexes
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OUTPUT_DIR="${1:-$(dirname "$SCRIPT_DIR")}"
 
-echo "=== brewx-index sync ==="
+echo "=== stout-index sync ==="
 echo "Output directory: $OUTPUT_DIR"
 echo ""
 
@@ -45,15 +45,15 @@ $PYTHON update_manifest.py --output "$OUTPUT_DIR"
 echo ""
 echo "=== Signing Indexes ==="
 # Sign if we have a key available
-if [ -n "$BREWX_SIGNING_KEY" ]; then
-    echo "Using signing key from BREWX_SIGNING_KEY environment variable"
-    $PYTHON sign_index.py sign --key '$BREWX_SIGNING_KEY' --index-dir "$OUTPUT_DIR"
-elif [ -f "$SCRIPT_DIR/../keys/brewx-index.key" ]; then
+if [ -n "$STOUT_SIGNING_KEY" ]; then
+    echo "Using signing key from STOUT_SIGNING_KEY environment variable"
+    $PYTHON sign_index.py sign --key '$STOUT_SIGNING_KEY' --index-dir "$OUTPUT_DIR"
+elif [ -f "$SCRIPT_DIR/../keys/stout-index.key" ]; then
     echo "Using signing key from local keys directory"
-    $PYTHON sign_index.py sign --key "$SCRIPT_DIR/../keys/brewx-index.key" --index-dir "$OUTPUT_DIR"
+    $PYTHON sign_index.py sign --key "$SCRIPT_DIR/../keys/stout-index.key" --index-dir "$OUTPUT_DIR"
 else
     echo "⚠️  No signing key available - indexes will be unsigned"
-    echo "   Set BREWX_SIGNING_KEY environment variable or place key in keys/brewx-index.key"
+    echo "   Set STOUT_SIGNING_KEY environment variable or place key in keys/stout-index.key"
 fi
 
 echo ""

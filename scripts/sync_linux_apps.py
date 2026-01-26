@@ -376,7 +376,7 @@ async def sync(output_dir: Path, sources: list[str], no_compress: bool = False) 
 
     # Fetch from each source in parallel
     async with aiohttp.ClientSession(
-        headers={'User-Agent': 'brewx/0.1'},
+        headers={'User-Agent': 'stout/0.1'},
         timeout=aiohttp.ClientTimeout(total=60)
     ) as session:
         tasks = []

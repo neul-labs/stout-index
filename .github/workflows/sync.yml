@@ -84,15 +84,15 @@ jobs:
 
       - name: Sign Indexes
         env:
-          BREWX_SIGNING_KEY: ${{ secrets.BREWX_SIGNING_KEY }}
+          STOUT_SIGNING_KEY: ${{ secrets.STOUT_SIGNING_KEY }}
         run: |
-          if [ -n "$BREWX_SIGNING_KEY" ]; then
+          if [ -n "$STOUT_SIGNING_KEY" ]; then
             echo "Signing indexes with Ed25519 key..."
             cd scripts
-            uv run python sign_index.py sign --key '$BREWX_SIGNING_KEY' --index-dir ../
+            uv run python sign_index.py sign --key '$STOUT_SIGNING_KEY' --index-dir ../
             echo "✓ Indexes signed successfully"
           else
-            echo "⚠️ BREWX_SIGNING_KEY secret not configured - indexes will be unsigned"
+            echo "⚠️ STOUT_SIGNING_KEY secret not configured - indexes will be unsigned"
             echo "   Add the private key to repository secrets to enable signing"
           fi
 
@@ -133,7 +133,7 @@ jobs:
             if [ -n "$SIGNED" ]; then
               echo "🔐 **Indexes are cryptographically signed**" >> $GITHUB_STEP_SUMMARY
             else
-              echo "⚠️ **Indexes are NOT signed** (configure BREWX_SIGNING_KEY secret)" >> $GITHUB_STEP_SUMMARY
+              echo "⚠️ **Indexes are NOT signed** (configure STOUT_SIGNING_KEY secret)" >> $GITHUB_STEP_SUMMARY
             fi
           fi
 

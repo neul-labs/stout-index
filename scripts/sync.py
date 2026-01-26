@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-brewx index sync script.
+stout index sync script.
 
 Fetches formula data from Homebrew API and builds:
 1. SQLite index database (formulas/index.db.zst)
@@ -49,7 +49,7 @@ async def fetch_homebrew_formulas(session: aiohttp.ClientSession) -> list[dict]:
 
 
 def transform_formula(hb_formula: dict) -> dict:
-    """Transform Homebrew formula JSON to brewx format."""
+    """Transform Homebrew formula JSON to stout format."""
     # Extract bottles
     bottles = {}
     if bottle_data := hb_formula.get("bottle", {}).get("stable", {}).get("files", {}):
@@ -60,7 +60,7 @@ def transform_formula(hb_formula: dict) -> dict:
                 "cellar": data.get("cellar", "/opt/homebrew/Cellar"),
             }
 
-    # Build brewx format
+    # Build stout format
     return {
         "name": hb_formula["name"],
         "version": hb_formula.get("versions", {}).get("stable", ""),
@@ -250,7 +250,7 @@ async def sync(output_dir: Path, full: bool = False) -> dict:
     # Transform all formulas in parallel using process pool for CPU-bound work
     log.info("Transforming formulas...")
     loop = asyncio.get_event_loop()
-    brewx_formulas = await loop.run_in_executor(
+    stout_formulas = await loop.run_in_executor(
         None,
         lambda: [transform_formula(f) for f in hb_formulas]
     )
@@ -261,7 +261,7 @@ async def sync(output_dir: Path, full: bool = False) -> dict:
 
     write_tasks = [
         write_formula_json(formula, formulas_data_dir, semaphore)
-        for formula in brewx_formulas
+        for formula in stout_formulas
     ]
 
     results = await asyncio.gather(*write_tasks)
@@ -279,20 +279,20 @@ async def sync(output_dir: Path, full: bool = False) -> dict:
 
     log.info("Inserting into database...")
 
-    for brewx_formula in brewx_formulas:
-        name = brewx_formula["name"]
+    for stout_formula in stout_formulas:
+        name = stout_formula["name"]
         json_hash = json_hashes.get(name, "")
 
         # Insert into index
-        version = brewx_formula["version"]
-        revision = brewx_formula["revision"]
-        desc = brewx_formula.get("desc")
-        homepage = brewx_formula.get("homepage")
-        license_str = brewx_formula.get("license")
-        tap = brewx_formula.get("tap", "homebrew/core")
-        deprecated = 1 if brewx_formula["flags"]["deprecated"] else 0
-        disabled = 1 if brewx_formula["flags"]["disabled"] else 0
-        has_bottle = 1 if brewx_formula["bottles"] else 0
+        version = stout_formula["version"]
+        revision = stout_formula["revision"]
+        desc = stout_formula.get("desc")
+        homepage = stout_formula.get("homepage")
+        license_str = stout_formula.get("license")
+        tap = stout_formula.get("tap", "homebrew/core")
+        deprecated = 1 if stout_formula["flags"]["deprecated"] else 0
+        disabled = 1 if stout_formula["flags"]["disabled"] else 0
+        has_bottle = 1 if stout_formula["bottles"] else 0
 
         cursor.execute(
             """
@@ -317,7 +317,7 @@ async def sync(output_dir: Path, full: bool = False) -> dict:
         )
 
         # Insert dependencies
-        deps = brewx_formula["dependencies"]
+        deps = stout_formula["dependencies"]
         for dep_type, dep_list in deps.items():
             for dep_name in dep_list:
                 cursor.execute(
@@ -326,14 +326,14 @@ async def sync(output_dir: Path, full: bool = False) -> dict:
                 )
 
         # Insert bottle platforms
-        for platform in brewx_formula["bottles"]:
+        for platform in stout_formula["bottles"]:
             cursor.execute(
                 "INSERT OR IGNORE INTO bottles (formula, platform) VALUES (?, ?)",
                 (name, platform),
             )
 
         # Insert aliases
-        for alias in brewx_formula.get("aliases", []):
+        for alias in stout_formula.get("aliases", []):
             cursor.execute(
                 "INSERT OR IGNORE INTO aliases (alias, formula) VALUES (?, ?)",
                 (alias, name),
@@ -399,7 +399,7 @@ async def sync(output_dir: Path, full: bool = False) -> dict:
 
 
 async def main_async():
-    parser = argparse.ArgumentParser(description="Sync brewx index from Homebrew API")
+    parser = argparse.ArgumentParser(description="Sync stout index from Homebrew API")
     parser.add_argument(
         "--output",
         "-o",
