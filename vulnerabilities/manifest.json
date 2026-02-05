@@ -1,15 +1,15 @@
 {
-  "version": "2026.02.05.1652",
-  "index_version": "2026.02.05.1652",
-  "index_sha256": "bf405abf4ecfdb22ff6ac0df86b2f956b039a8b8dc60740d49a3aa8268973c3d",
-  "index_size": 52450,
-  "vulnerability_count": 277,
-  "affected_mapping_count": 288,
+  "version": "2026.02.05.2036",
+  "index_version": "2026.02.05.2036",
+  "index_sha256": "a5d73f3505b59de15d0df592aa2e56576ae3c6cde4b707e192c9ccd0a3d9a28d",
+  "index_size": 52585,
+  "vulnerability_count": 278,
+  "affected_mapping_count": 289,
   "formula_count": 18,
   "ecosystems": [
     "Go",
     "OSS-Fuzz",
     "crates.io"
   ],
-  "created_at": "2026-02-05T16:52:39.261659Z"
+  "created_at": "2026-02-05T20:36:31.963900Z"
 }
