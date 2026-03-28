@@ -1,9 +1,9 @@
 {
-  "version": "2026.03.28.1637",
-  "index_version": "2026.03.28.1637",
-  "index_sha256": "0f8eccfb09357d6cba4c4217438eaeef3fdb671b86ba9bf48e9fdcfecf18d101",
-  "index_size": 2850343,
-  "formula_count": 8291,
-  "created_at": "2026-03-28T16:37:50.613605Z",
-  "homebrew_commit": "5f99378330781a0aee402a3e8729f5a92879e419"
+  "version": "2026.03.28.2034",
+  "index_version": "2026.03.28.2034",
+  "index_sha256": "103d721f79be6aa9673c9394891c37223799c154e09b18301c70dc1c4fb4d1c7",
+  "index_size": 2850592,
+  "formula_count": 8292,
+  "created_at": "2026-03-28T20:34:43.739371Z",
+  "homebrew_commit": "47d74a7de6c0ecf2008b0f4067cf6afe93b2009a"
 }
