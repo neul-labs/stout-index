@@ -1,31 +1,31 @@
 {
-  "version": "2026.04.17.1325",
-  "created_at": "2026-04-17T13:25:27.046016Z",
+  "version": "2026.04.17.1658",
+  "created_at": "2026-04-17T16:58:18.525358Z",
   "stout_min_version": "0.1.0",
   "indexes": {
     "formulas": {
       "count": 8314,
-      "db_sha256": "e18572337e382de515f09007fd4e029888842ccb3d55b585ee8f52f6b3fd91fe",
-      "db_size": 2859912,
-      "updated_at": "2026-04-17T13:25:17.900333Z"
+      "db_sha256": "751ab4228d07b03cbd51928c38b2a1f02047fbc118216c3f0e68afe7172537a2",
+      "db_size": 2859210,
+      "updated_at": "2026-04-17T16:58:09.372289Z"
     },
     "casks": {
       "count": 7624,
-      "db_sha256": "b222e8af4c6528142351c04fe2aa8b6c9b25a6ade4f9e906ec8b567a510d239c",
-      "db_size": 1919927,
-      "updated_at": "2026-04-17T13:25:21.803536Z"
+      "db_sha256": "3ba7eed229399984cf5495e6a259d18f261ad8ba8b9255c06d8a84e1d816f79a",
+      "db_size": 1919574,
+      "updated_at": "2026-04-17T16:58:14.373439Z"
     },
     "linux_apps": {
       "count": 1075,
       "db_sha256": "758b5faf5a34c11006b72474ba3f597f82add94b01d9df41af1e487c5cfbc3c8",
       "db_size": 207467,
-      "updated_at": "2026-04-17T13:25:23.046517Z"
+      "updated_at": "2026-04-17T16:58:15.666230Z"
     },
     "vulnerabilities": {
       "count": 18,
-      "db_sha256": "4d7fa4f26e2ce1eb0b61ea613814aa3e4e5bd54d7d89f7910b2db72188fd651f",
-      "db_size": 54863,
-      "updated_at": "2026-04-17T13:25:26.970130Z"
+      "db_sha256": "e667736a0b5819899458afff361d56846b5da81a6045ba04d4c8e49e18c9e06f",
+      "db_size": 54880,
+      "updated_at": "2026-04-17T16:58:18.429763Z"
     }
   }
 }
