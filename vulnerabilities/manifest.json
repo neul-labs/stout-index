@@ -1,8 +1,8 @@
 {
-  "version": "2026.05.14.0651",
-  "index_version": "2026.05.14.0651",
-  "index_sha256": "1bfa00694b5388b0c6b64049d772e898d7b73d9cfda566c44771caf0a4e7b900",
-  "index_size": 56416,
+  "version": "2026.05.14.1020",
+  "index_version": "2026.05.14.1020",
+  "index_sha256": "5712b4c176d6651c7066e6e8fd74042bbfce2f42a9d53702156ad81e67e11d19",
+  "index_size": 56413,
   "vulnerability_count": 301,
   "affected_mapping_count": 312,
   "formula_count": 18,
@@ -11,5 +11,5 @@
     "OSS-Fuzz",
     "crates.io"
   ],
-  "created_at": "2026-05-14T06:51:27.771269Z"
+  "created_at": "2026-05-14T10:20:09.370199Z"
 }
