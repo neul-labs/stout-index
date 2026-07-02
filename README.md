@@ -1,6 +1,8 @@
 # stout-index
 
-Pre-computed package index for [stout](https://github.com/neul-labs/stout), a fast Rust-based Homebrew-compatible package manager.
+**The pre-computed package index that powers [stout](https://github.com/neul-labs/stout) — a drop-in replacement for the Homebrew CLI that's 10-100x faster.** This repo ships ready-to-query formula, cask, Linux-app, and vulnerability indexes so stout can search and resolve packages instantly instead of parsing Ruby at runtime.
+
+**[stout website](https://stout.neullabs.com) · [Documentation](https://docs.neullabs.com/stout) · [Neul Labs](https://www.neullabs.com)**
 
 ## Overview
 
@@ -171,6 +173,19 @@ To improve the index:
 2. Make changes to sync scripts in `scripts/`
 3. Test locally with `./scripts/sync_all.sh`
 4. Submit a pull request
+
+## Part of the Neul Labs toolchain
+
+stout-index powers [stout](https://github.com/neul-labs/stout), part of the Neul Labs command-line & filesystem toolchain:
+
+| Project | What it does |
+|---------|--------------|
+| [stout](https://github.com/neul-labs/stout) | A drop-in replacement for the Homebrew CLI that's 10-100x faster. |
+| [recurl](https://github.com/neul-labs/recurl) | curl that just works — drop-in replacement with automatic anti-bot bypass. |
+| [rewget](https://github.com/neul-labs/rewget) | wget, but it works everywhere. |
+| [stratafs](https://github.com/neul-labs/stratafs) | A semantic filesystem for AI-era search. |
+
+Explore the full toolchain at [neullabs.com](https://www.neullabs.com).
 
 ## License
 
