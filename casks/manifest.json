@@ -1,8 +1,8 @@
 {
-  "version": "2026.10.25.0336",
-  "cask_index_version": "2026.10.25.0336",
-  "cask_index_sha256": "b5191ab470027a1966ab8e0f9d958efa7400c016c0537c9eec71cd2b4db4b695",
-  "cask_index_size": 1821421,
+  "version": "2026.10.25.0903",
+  "cask_index_version": "2026.10.25.0903",
+  "cask_index_sha256": "d2bfd09b362b6533b98ba8a0225953340fc70e40f81542f77636851369975ae7",
+  "cask_index_size": 1821255,
   "cask_count": 7809,
-  "created_at": "2026-10-25T03:36:33.186896Z"
+  "created_at": "2026-10-25T09:03:33.740709Z"
 }
